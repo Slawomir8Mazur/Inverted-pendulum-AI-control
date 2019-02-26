@@ -17,6 +17,7 @@ class Record(Base):
     ''' mass constants'''
     m_1 = Column(Float)
     I_2 = Column(Float)
+    L = Column(Float)
     ''' kinematics variables'''
     a_1 = Column(Float)
     v_1 = Column(Float)
