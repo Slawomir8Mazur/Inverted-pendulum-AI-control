@@ -8,9 +8,28 @@ import pandas as pd
 
 
 class Record:
+    """
+    Holds values of state of pendulum
+    example initiation:
+
+    record = Record(previous_record, M_1=11.2, L=280)
+
+    , where previous_record is of instance Record
+    """
     def __init__(self, *args, **kwargs):
-        for key, item in kwargs.items():
-            setattr(self, key, item)
+        if args:
+            if isinstance(args[0], Record):
+                self.record = args[0]
+        else:
+            self.record = pd.DataFrame(columns=['M_1', 'I_2', 'L',
+                                                'A_1', 'V_1', 'U_1',
+                                                'E_2', 'W_2', 'Fi_2',
+                                                'K', 'B'],
+                                       index=[1],
+                                       dtype=np.float32)
+
+        for key, value in kwargs.items():
+            self.record[key] = value
 
 
 engine = create_engine('sqlite:///parameters.db', echo=True)
