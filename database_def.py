@@ -30,6 +30,34 @@ class Record:
 
         for key, value in kwargs.items():
             self.record[key] = value
+        
+        self.stack_of_movement = []
+        self.last_movement = []
+
+
+    def new_record(self):
+        return pd.DataFrame(columns=['M_1', 'I_2', 'L','A_1', 'V_1', 'U_1','E_2', 'W_2', 'Fi_2', 'K', 'B'], index=[1], dtype=np.float32)
+
+
+    def single_move(self, force):
+        [self.stack_of_movement.append(el) for el in self.last_movement]
+        self.last_movement = [].append(self.record)
+    ''' 1.Write movement equation
+        2.Should return nothing
+        3.Enhence last_movement - should be adding only variables of movement
+
+    '''
+
+    def move(self, force, dt_min=0.02):
+        for F, t in force:
+            if t>dt_min:
+                dt = int(t//dt_mi)
+                for i in range(dt):
+                    single_move((F, dt))
+                single_move((F, t%dt))
+            else:
+                single_move((F, t))
+    #Test this function
 
 
 engine = create_engine('sqlite:///parameters.db', echo=True)
