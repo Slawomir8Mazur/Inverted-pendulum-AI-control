@@ -1,8 +1,8 @@
-from sqlalchemy import create_engine, ForeignKey
+'''from sqlalchemy import create_engine, ForeignKey
 from sqlalchemy import Column, Integer, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
-
+'''
 import numpy as np
 import pandas as pd
 
@@ -19,7 +19,7 @@ class Record:
     def __init__(self, *args, **kwargs):
         if args:
             if isinstance(args[0], Record):
-                self.record = args[0R
+                self.record = args[0]
         else:
             self.record = pd.DataFrame(columns=['M_1', 'I_2', 'L',
                                                 'A_1', 'V_1', 'U_1',
@@ -31,73 +31,94 @@ class Record:
         for key, value in kwargs.items():
             self.record[key] = value
         
-        self.stack_of_movement = []
-        self.last_movement = []
-
+        self.stack_of_movement = self.new_movement_record()
+        self.last_movement = self.new_movement_record()
 
     def new_record(self):
         return pd.DataFrame(columns=['M_1', 'I_2', 'L',
-                                    'A_1', 'V_1', 'U_1',
-                                    'E_2', 'W_2', 'Fi_2', 
-                                    'K', 'B'],
+                                     'A_1', 'V_1', 'U_1',
+                                     'E_2', 'W_2', 'Fi_2',
+                                     'K', 'B'],
                             index=[1],
                             dtype=np.float32)
+
+    def new_movement_record(self):
+        return pd.DataFrame(columns=['A_1', 'V_1', 'U_1',
+                                     'E_2', 'W_2', 'Fi_2'],
+                            index=[1],
+                            dtype=np.float32)
+
+    def give_movement(self):
+        column_names = ['A_1', 'V_1', 'U_1', 'E_2', 'W_2', 'Fi_2']
+        return self.record[column_names]
+
+    def give_angle(self):
+        """ Operates with degrees"""
+        return self.record['Fi_2']/np.pi*180
+
+    def change_angle(self, angle_value):
+        """ Operates with degrees"""
+        self.record['Fi_2'] = np.pi*angle_value/180
+
     def dummy_set(self):
         for key in self.record.columns:
-            self.record[key] = np.random.randint(20)
+            self.record[key] = np.random.random()
 
+    def position_set(self, angle):
+        input_table = [10, 100, 1,
+                       0, 0, 0,
+                       0, 0, angle*np.pi/180,
+                       0, 0]
+        self.record.astype(np.float32)
+        for pos, key in enumerate(self.record.columns):
+            self.record[key] = input_table[pos]
 
-    def single_move(self, force):
-        [self.stack_of_movement.append(el) for el in self.last_movement]
-        self.last_movement = [].append(self.record)
-    ''' 1.Write movement equation
+    def update_stacks(self):
+        self.stack_of_movement = self.stack_of_movement.append(self.last_movement)
+        self.last_movement = self.record
+
+    def single_move(self, force_table_record):
+        self.update_stacks()
+
+        new_record = self.record.copy()
+        force, dt = force_table_record
+
+        """ movement equations"""
+        F_1 = self.record['M_1']*9.81*np.sin(self.record['Fi_2'])*np.cos(self.record['Fi_2']) + force
+        M_2 = self.record['L']*self.record['M_1']*9.81*np.sin(self.record['Fi_2'])/2 \
+              - self.record['L']*np.cos(self.record['Fi_2'])*force/2
+
+        new_record['A_1'] = F_1 / new_record['M_1']
+        new_record['E_1'] = M_2 / new_record['I_2']
+
+        new_record['V_1'] = self.record['V_1'] + new_record['A_1']/dt
+        new_record['W_2'] = self.record['W_2'] + new_record['E_2'] / dt
+
+        new_record['U_1'] = self.record['U_1'] + new_record['V_1'] / dt
+        new_record['Fi_2'] = self.record['Fi_2'] + new_record['W_2'] / dt
+
+        self.record = new_record
+        return new_record
+        ''' 
         2.Should return nothing
         3.Enhence last_movement - should be adding only variables of movement
+        '''
 
-    '''
-
-    def move(self, force, dt_min=0.02):
-        for F, t in force:
-            if t>dt_min:
-                dt = int(t//dt_mi)
+    def move(self, force_table, dt_min=0.02):
+        for F, t in force_table:
+            if t > dt_min:
+                dt = int(t//dt_min)
                 for i in range(dt):
-                    single_move((F, dt))
-                single_move((F, t%dt))
+                    self.single_move((F, dt))
+                self.single_move((F, t%dt))
             else:
-                single_move((F, t))
+                self.single_move((F, t))
     #Test this function
-'''
-engine = create_engine('sqlite:///parameters.db', echo=True)
-Base = declarative_base()
 
 
-class RecordBase(Base):
-    """
-    Class containing parameters of pendulum at one moment.
-    All those parameters will be saved into database "parameters.db"
-    """
-    def __init__(self, *args, **kwargs):
-        for key, item in kwargs.items():
-            setattr(self, key, item)
-
-    __tablename__ = 'record'
-    id = Column(Integer, primary_key=True)  #holds unique id of sample
-
-    """ mass constants"""
-    M_1 = Column(Float)
-    I_2 = Column(Float)
-    L = Column(Float)
-    """ kinematics variables"""
-    A_1 = Column(Float)
-    V_1 = Column(Float)
-    U_1 = Column(Float)
-    E_2 = Column(Float)
-    W_2 = Column(Float)
-    Fi_2 = Column(Float)
-    """ variables of reaction"""
-    K = Column(Float)
-    B = Column(Float)
-
-
-Base.metadata.create_all(engine)
-'''
+r = Record()
+r.position_set(30)
+print(r.give_movement())
+r.move([(0, 0.1)], dt_min=0.01)
+#print(r.record.to_string())
+print(r.give_movement())
