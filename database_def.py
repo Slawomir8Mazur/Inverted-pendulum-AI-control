@@ -19,7 +19,7 @@ class Record:
     def __init__(self, *args, **kwargs):
         if args:
             if isinstance(args[0], Record):
-                self.record = args[0]
+                self.record = args[0R
         else:
             self.record = pd.DataFrame(columns=['M_1', 'I_2', 'L',
                                                 'A_1', 'V_1', 'U_1',
@@ -36,7 +36,15 @@ class Record:
 
 
     def new_record(self):
-        return pd.DataFrame(columns=['M_1', 'I_2', 'L','A_1', 'V_1', 'U_1','E_2', 'W_2', 'Fi_2', 'K', 'B'], index=[1], dtype=np.float32)
+        return pd.DataFrame(columns=['M_1', 'I_2', 'L',
+                                    'A_1', 'V_1', 'U_1',
+                                    'E_2', 'W_2', 'Fi_2', 
+                                    'K', 'B'],
+                            index=[1],
+                            dtype=np.float32)
+    def dummy_set(self):
+        for key in self.record.columns:
+            self.record[key] = np.random.randint(20)
 
 
     def single_move(self, force):
@@ -58,8 +66,7 @@ class Record:
             else:
                 single_move((F, t))
     #Test this function
-
-
+'''
 engine = create_engine('sqlite:///parameters.db', echo=True)
 Base = declarative_base()
 
@@ -76,20 +83,21 @@ class RecordBase(Base):
     __tablename__ = 'record'
     id = Column(Integer, primary_key=True)  #holds unique id of sample
 
-    ''' mass constants'''
+    """ mass constants"""
     M_1 = Column(Float)
     I_2 = Column(Float)
     L = Column(Float)
-    ''' kinematics variables'''
+    """ kinematics variables"""
     A_1 = Column(Float)
     V_1 = Column(Float)
     U_1 = Column(Float)
     E_2 = Column(Float)
     W_2 = Column(Float)
     Fi_2 = Column(Float)
-    ''' variables of reaction'''
+    """ variables of reaction"""
     K = Column(Float)
     B = Column(Float)
 
 
 Base.metadata.create_all(engine)
+'''
