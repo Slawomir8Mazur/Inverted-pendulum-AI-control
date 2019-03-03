@@ -5,6 +5,8 @@ from sqlalchemy.orm import relationship, backref
 '''
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+#import seaborn as snb
 
 
 class Record:
@@ -62,7 +64,7 @@ class Record:
             self.record[key] = np.random.random()
 
     def position_set(self, angle):
-        input_table = [10, 100, 1,
+        input_table = [10, 10, 1,
                        0, 0, 0,
                        0, 0, angle*np.pi/180,
                        0, 0]
@@ -105,22 +107,60 @@ class Record:
 
         for F, t in force_table:
             if t > dt_min:
-                dt = int(t//dt_min)
-                for i in range(dt):
-                    self.single_move((F, dt))
-                self.single_move((F, t%dt))
+                rng = int(t//dt_min)
+                for i in range(rng):
+                    self.single_move((F, dt_min))
+                self.single_move((F, t%dt_min))
             else:
                 self.single_move((F, t))
 
-    def visealize(self, features, source, separately):
+    def visualize(self, features, source, separately, stop=False):
+        """
+        Function plotting pointed features of source DataFrame
+        :param features: list of features, ex. ['A_1', 'E_2']
+        :param source: where from print
+        :param separately: True if you dont want to print on the same plot
+        :param stop: If True computation is stopped after showing plot, if False ALLWAYS USE plt.show() later
+        """
         if features == 'all':
             features = self.new_record().columns
-            pass
+        if features == 'move':
+            features = self.new_movement_record().columns
+
+        if separately:
+            for feature in features:
+                plt.figure()
+                plt.plot(source.index, source[feature])
+                plt.title(feature)
+                plt.ylabel(feature)
+                plt.xlabel('index')
+        else:
+            f_len = len(features)
+            plt.figure()
+            for i, feature in enumerate(features):
+                plt.subplot(1, f_len, i+1)
+                plt.plot(source.index, source[feature])
+                plt.title(feature)
+                plt.ylabel(feature)
+                plt.xlabel('index')
+
+        if not stop:
+            plt.draw()
+        else:
+            plt.show()
+
+
 
 
 r = Record()
-r.position_set(30)
+r.position_set(90)
+r.move([(0, 1),], dt_min=0.05)
+r.visualize(['A_1', 'V_1', 'U_1'], r.last_movement, False)
+r.visualize(['E_2', 'W_2', 'Fi_2'], r.last_movement, False)
+plt.show()
+'''
 print(r.give_movement_param())
 r.move([(0, 0.1)], dt_min=0.01)
 print(r.last_movement.to_string())
 print(r.stack_of_movement.to_string(), end='\n-----------------------')
+'''
