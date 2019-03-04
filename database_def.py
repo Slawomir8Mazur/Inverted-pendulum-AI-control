@@ -76,7 +76,6 @@ class Record:
         self.update_last_movement()
 
     def update_last_movement(self):
-        print(self.record.to_string())
         self.last_movement = self.last_movement.append(self.give_movement_param(), ignore_index=True)
 
     def single_move(self, force_table_record):
@@ -87,33 +86,22 @@ class Record:
         """ movement equations"""
 
         new_record['__x'] = (- np.multiply.reduce([self.record['m_2'],
-                                  self.record['l'],
-                                  np.power(self.record['_fi'], 2),
-                                  np.sin(self.record['fi'])])
-                            + np.multiply.reduce([self.record['m_2'],
-                                  self.record['l'],
-                                  self.record['__fi'],
-                                  np.cos(self.record['fi'])])
-                            + force
-                            ) / np.add(self.record['m_1'],
-                                       self.record['m_2'])
+                                                   self.record['l'],
+                                                   np.power(self.record['_fi'], 2),
+                                                   np.sin(self.record['fi'])])
+                             + np.multiply.reduce([self.record['m_2'],
+                                                   self.record['l'],
+                                                   self.record['__fi'],
+                                                   np.cos(self.record['fi'])])
+                             + force
+                             ) / np.add(self.record['m_1'],
+                                        self.record['m_2'])
 
         new_record['__fi'] = (+ np.multiply.reduce([self.record['g'],
-                                                  np.sin(self.record['fi'])])
-                             + np.multiply.reduce([self.record['__x'],
+                                                   np.sin(self.record['fi'])])
+                             + np.multiply.reduce([new_record['__x'],
                                                    np.cos(self.record['fi'])])
                              ) / self.record['l']
-        """
-
-        new_record['__x'] = (force
-                             + self.record['m_2']*self.record['l']*np.cos(self.record['fi'])*self.record['__fi']
-                             + self.record['m_2']*self.record['l']*np.sin(self.record['fi'])*self.record['_fi']*self.record['_fi']
-                             )
-        new_record['__x'] = new_record['__x'] / (new_record['m_1'] + new_record['m_2'])
-
-        new_record['__fi'] = (new_record['__x']*np.cos(self.record['fi'])
-                              + self.record['g']*np.sin(self.record['fi']))
-        """
 
         new_record['_x'] = self.record['_x'] + new_record['__x']*dt
         new_record['_fi'] = self.record['_fi'] + new_record['__fi']*dt
@@ -144,10 +132,17 @@ class Record:
         :param separately: True if you dont want to print on the same plot
         :param stop: If True computation is stopped after showing plot, if False ALLWAYS USE plt.show() later
         """
-        if features == 'all':
+        if features == ['all']:
             features = self.new_record().columns
-        if features == 'move':
+        if features == ['move']:
             features = self.new_movement_record().columns
+
+        ''' Look for errors'''
+        if 'fi' in features:
+            new_col_name = 'fi[deg]'
+            features = [elem if elem != 'fi' else new_col_name for elem in features]
+            source.columns = [elem for elem in source.columns.index].append(new_col_name)
+            source[new_col_name] = source['fi'] / np.pi * 180
 
         if separately:
             for feature in features:
@@ -175,10 +170,12 @@ class Record:
 
 
 r = Record()
-r.position_set(70)
-r.move([(0, 5),], dt_min=0.05)
-r.visualize(['__x', '_x', 'x'], r.last_movement, False)
-r.visualize(['__fi', '_fi', 'fi'], r.last_movement, False)
+r.position_set(130)
+r.move([(10, 5),], dt_min=0.05)
+r.visualize(['move'], r.last_movement, False)
+#r.visualize(['__x', '_x', 'x'], r.last_movement, False)
+#r.visualize(['__fi', '_fi', 'fi'], r.last_movement, False)
+print(r.last_movement)
 plt.show()
 '''
 print(r.give_movement_param())
