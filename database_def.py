@@ -33,9 +33,9 @@ class Record:
 
     @staticmethod
     def new_record():
-        return pd.DataFrame(columns=['m_1', 'm_2', 'l','g'
+        return pd.DataFrame(columns=['m_1', 'm_2', 'l', 'g'
                                      ,'__x', '_x', 'x',
-                                     '__fi', '_fi', 'fi']
+                                     '__fi', '_fi', 'fi'],
                             index=[0],
                             dtype=np.float32)
 
@@ -63,9 +63,9 @@ class Record:
             self.record[key] = np.random.random()
 
     def position_set(self, angle):
-        input_table = [20, 2, 1,
+        input_table = [20, 2, 1, 9.81,
                        0, 0, 0,
-                       0, 0, angle*np.pi/180]
+                       0, 0, angle*np.pi/180.0]
         self.record.astype(np.float32)
         for pos, key in enumerate(self.record.columns):
             self.record[key] = input_table[pos]
@@ -76,6 +76,7 @@ class Record:
         self.update_last_movement()
 
     def update_last_movement(self):
+        print(self.record.to_string())
         self.last_movement = self.last_movement.append(self.give_movement_param(), ignore_index=True)
 
     def single_move(self, force_table_record):
@@ -84,18 +85,41 @@ class Record:
         force, dt = force_table_record
 
         """ movement equations"""
-        F_1 = self.record['M_1']*9.81*np.sin(self.record['Fi_2'])*np.cos(self.record['Fi_2']) + force
-        M_2 = self.record['L']*self.record['M_1']*9.81*np.sin(self.record['Fi_2'])/2 \
-              - self.record['L']*np.cos(self.record['Fi_2'])*force/2
 
-        new_record['A_1'] = F_1 / new_record['M_1']
-        new_record['E_2'] = M_2 / new_record['I_2']
+        new_record['__x'] = (- np.multiply.reduce([self.record['m_2'],
+                                  self.record['l'],
+                                  np.power(self.record['_fi'], 2),
+                                  np.sin(self.record['fi'])])
+                            + np.multiply.reduce([self.record['m_2'],
+                                  self.record['l'],
+                                  self.record['__fi'],
+                                  np.cos(self.record['fi'])])
+                            + force
+                            ) / np.add(self.record['m_1'],
+                                       self.record['m_2'])
 
-        new_record['V_1'] = self.record['V_1'] + new_record['A_1']/dt
-        new_record['W_2'] = self.record['W_2'] + new_record['E_2'] / dt
+        new_record['__fi'] = (+ np.multiply.reduce([self.record['g'],
+                                                  np.sin(self.record['fi'])])
+                             + np.multiply.reduce([self.record['__x'],
+                                                   np.cos(self.record['fi'])])
+                             ) / self.record['l']
+        """
 
-        new_record['U_1'] = self.record['U_1'] + new_record['V_1'] / dt
-        new_record['Fi_2'] = self.record['Fi_2'] + new_record['W_2'] / dt
+        new_record['__x'] = (force
+                             + self.record['m_2']*self.record['l']*np.cos(self.record['fi'])*self.record['__fi']
+                             + self.record['m_2']*self.record['l']*np.sin(self.record['fi'])*self.record['_fi']*self.record['_fi']
+                             )
+        new_record['__x'] = new_record['__x'] / (new_record['m_1'] + new_record['m_2'])
+
+        new_record['__fi'] = (new_record['__x']*np.cos(self.record['fi'])
+                              + self.record['g']*np.sin(self.record['fi']))
+        """
+
+        new_record['_x'] = self.record['_x'] + new_record['__x']*dt
+        new_record['_fi'] = self.record['_fi'] + new_record['__fi']*dt
+
+        new_record['x'] = self.record['x'] + new_record['_x']*dt
+        new_record['fi'] = self.record['fi'] + new_record['_fi']*dt
 
         self.record = new_record
         return new_record
@@ -151,10 +175,10 @@ class Record:
 
 
 r = Record()
-r.position_set(90)
-r.move([(0, 1),], dt_min=0.05)
-r.visualize(['A_1', 'V_1', 'U_1'], r.last_movement, False)
-r.visualize(['E_2', 'W_2', 'Fi_2'], r.last_movement, False)
+r.position_set(70)
+r.move([(0, 5),], dt_min=0.05)
+r.visualize(['__x', '_x', 'x'], r.last_movement, False)
+r.visualize(['__fi', '_fi', 'fi'], r.last_movement, False)
 plt.show()
 '''
 print(r.give_movement_param())
