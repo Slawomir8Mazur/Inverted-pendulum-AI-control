@@ -33,22 +33,21 @@ class Record:
 
     @staticmethod
     def new_record():
-        return pd.DataFrame(columns=['M_1', 'I_2', 'L',
-                                     'A_1', 'V_1', 'U_1',
-                                     'E_2', 'W_2', 'Fi_2',
-                                     'K', 'B'],
+        return pd.DataFrame(columns=['m_1', 'm_2', 'l','g'
+                                     ,'__x', '_x', 'x',
+                                     '__fi', '_fi', 'fi']
                             index=[0],
                             dtype=np.float32)
 
     @staticmethod
     def new_movement_record():
-        return pd.DataFrame(columns=['A_1', 'V_1', 'U_1',
-                                     'E_2', 'W_2', 'Fi_2'],
+        return pd.DataFrame(columns=['__x', '_x', 'x',
+                                     '__fi', '_fi', 'fi'],
                             index=[1],
                             dtype=np.float32)
 
     def give_movement_param(self):
-        column_names = ['A_1', 'V_1', 'U_1', 'E_2', 'W_2', 'Fi_2']
+        column_names = ['__x', '_x', 'x', '__fi', '_fi', 'fi',]
         return self.record[column_names]
 
     def give_angle(self):
@@ -64,18 +63,17 @@ class Record:
             self.record[key] = np.random.random()
 
     def position_set(self, angle):
-        input_table = [10, 10, 1,
+        input_table = [20, 2, 1,
                        0, 0, 0,
-                       0, 0, angle*np.pi/180,
-                       0, 0]
+                       0, 0, angle*np.pi/180]
         self.record.astype(np.float32)
         for pos, key in enumerate(self.record.columns):
             self.record[key] = input_table[pos]
 
     def update_stacks(self):
-        self.stack_of_movement = self.stack_of_movement.append(self.last_movement, ignore_index=True)
+        self.stack_of_movement = self.stack_of_movement.append(self.last_movement, 
+                                                               ignore_index=True)
         self.update_last_movement()
-        #self.last_movement = self.record
 
     def update_last_movement(self):
         self.last_movement = self.last_movement.append(self.give_movement_param(), ignore_index=True)
