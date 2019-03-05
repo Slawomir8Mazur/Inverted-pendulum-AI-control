@@ -141,7 +141,6 @@ class Record:
         if 'fi' in features:
             new_col_name = 'fi[deg]'
             features = [elem if elem != 'fi' else new_col_name for elem in features]
-            source.columns = [elem for elem in source.columns.index].append(new_col_name)
             source[new_col_name] = source['fi'] / np.pi * 180
 
         if separately:
@@ -167,19 +166,13 @@ class Record:
             plt.show()
 
 
-
-
 r = Record()
 r.position_set(130)
-r.move([(10, 5),], dt_min=0.05)
+r.move([(10, 5), ], dt_min=0.05)
 r.visualize(['move'], r.last_movement, False)
-#r.visualize(['__x', '_x', 'x'], r.last_movement, False)
-#r.visualize(['__fi', '_fi', 'fi'], r.last_movement, False)
-print(r.last_movement)
 plt.show()
-'''
-print(r.give_movement_param())
-r.move([(0, 0.1)], dt_min=0.01)
-print(r.last_movement.to_string())
-print(r.stack_of_movement.to_string(), end='\n-----------------------')
-'''
+"""
+Next to do:
+1.add timeseries to moves and plot by that timeseries
+
+"""
