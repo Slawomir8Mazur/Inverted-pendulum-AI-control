@@ -33,21 +33,23 @@ class Record:
 
     @staticmethod
     def new_record():
-        return pd.DataFrame(columns=['m_1', 'm_2', 'l', 'g'
-                                     ,'__x', '_x', 'x',
-                                     '__fi', '_fi', 'fi'],
+        return pd.DataFrame(columns=['m_1', 'm_2', 'l', 
+                                     '__x', '_x', 'x',
+                                     '__fi', '_fi', 'fi',
+                                     'g', 't'],
                             index=[0],
                             dtype=np.float32)
 
     @staticmethod
     def new_movement_record():
         return pd.DataFrame(columns=['__x', '_x', 'x',
-                                     '__fi', '_fi', 'fi'],
+                                     '__fi', '_fi', 'fi',
+                                     't'],
                             index=[1],
                             dtype=np.float32)
 
     def give_movement_param(self):
-        column_names = ['__x', '_x', 'x', '__fi', '_fi', 'fi',]
+        column_names = self.new_movement_record().columns
         return self.record[column_names]
 
     def give_angle(self):
@@ -63,10 +65,10 @@ class Record:
             self.record[key] = np.random.random()
 
     def position_set(self, angle):
-        input_table = [20, 2, 1, 9.81,
+        input_table = [20, 2, 1, 
                        0, 0, 0,
-                       0, 0, angle*np.pi/180.0]
-        self.record.astype(np.float32)
+                       0, 0, angle*np.pi/180.0,
+                       9.81, 0]
         for pos, key in enumerate(self.record.columns):
             self.record[key] = input_table[pos]
 
@@ -108,6 +110,7 @@ class Record:
 
         new_record['x'] = self.record['x'] + new_record['_x']*dt
         new_record['fi'] = self.record['fi'] + new_record['_fi']*dt
+        new_record['t'] = self.record['t'] + dt
 
         self.record = new_record
         return new_record
@@ -143,36 +146,67 @@ class Record:
             features = [elem if elem != 'fi' else new_col_name for elem in features]
             source[new_col_name] = source['fi'] / np.pi * 180
 
+        if 't' in features:
+            features = [feature for feature in features if feature is not 't']
+
         if separately:
             for feature in features:
                 plt.figure()
-                plt.plot(source.index, source[feature])
+                plt.plot(source['t'], source[feature])
                 plt.title(feature)
                 plt.ylabel(feature)
-                plt.xlabel('index')
+                plt.xlabel('time[s]')
         else:
             f_len = len(features)
             plt.figure()
             for i, feature in enumerate(features):
                 plt.subplot(1, f_len, i+1)
-                plt.plot(source.index, source[feature])
+                plt.plot(source['t'], source[feature])
                 plt.title(feature)
                 plt.ylabel(feature)
-                plt.xlabel('index')
+                plt.xlabel('time[s]')
 
         if not stop:
             plt.draw()
         else:
             plt.show()
 
+        def save_to_database(self, what='all', if_exists='replace'):
+            engine = create_engine('sqlite:///parameters.db')
+            if what=="all":
+                what = [self.record,
+                        self.last_movement,
+                        self.stack_of_movement]
+            for source in what:
+                source.to_sql(source.__name___,
+                              engine,
+                              if_exists=if_exists)
 
-r = Record()
-r.position_set(130)
-r.move([(10, 5), ], dt_min=0.05)
-r.visualize(['move'], r.last_movement, False)
-plt.show()
+        def load_from_database(self, where_to='all'):
+            engine = create_engine('sqlite:///parameters.db')
+            if what=='all':
+                what = [self.record,
+                        self.last_movement,
+                        self.stack_of_movement]
+            for source in where_to:
+                source = pd.read_sql_table(source.__name__,
+                                           con=engine)
+
+if __name__ == '__main__':
+    r = Record()
+    r.position_set(130)
+    r.move([(10, 5), ], dt_min=0.05)
+    r.visualize(['move'], r.last_movement, False)
+    plt.show()
+else:
+    print('It is not database.py file')
+    r = Record()
+    r.position_set(130)
+    r.move([(10, 5), ], dt_min=0.05)
+       
+
 """
 Next to do:
-1.add timeseries to moves and plot by that timeseries
+check saving to and loading from database
 
 """
