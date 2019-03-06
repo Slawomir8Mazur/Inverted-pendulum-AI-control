@@ -195,8 +195,8 @@ class Record:
 if __name__ == '__main__':
     r = Record()
     r.position_set(130)
-    r.move([(10, 5), ], dt_min=0.05)
-    r.visualize(['move'], r.last_movement, False)
+    r.move([(0,150), ], dt_min=0.05)
+    r.visualize(['fi'], r.last_movement, False)
     plt.show()
 else:
     print('It is not database.py file')
