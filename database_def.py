@@ -83,15 +83,27 @@ class Record:
         for pos, key in enumerate(self.record.columns):
             self.record[key] = input_table[pos]
 
+    @staticmethod
+    def sort_time(source):
+        for row in source.index[:-1]:
+            if source.loc[row+1, 't'] < source.loc[row, 't']:
+                source.loc[row + 1:, 't'] += source.loc[row, 't']
+                break
+
     def update_stacks(self):
+        self.stack_of_movement.dropna(inplace=True)
         stack_name = self.stack_of_movement.name
-        self.stack_of_movement = self.stack_of_movement.append(self.last_movement, 
+        self.stack_of_movement = self.stack_of_movement.append(self.last_movement,
                                                                ignore_index=True)
         self.stack_of_movement.name = stack_name
+        self.sort_time(self.stack_of_movement)
+
+        self.last_movement = self.new_movement_record()
         self.update_last_movement()
 
     def update_last_movement(self):
         movement_name = self.last_movement.name
+        self.last_movement.dropna(inplace=True)
         self.last_movement = self.last_movement.append(self.give_movement_param(), ignore_index=True)
         self.last_movement.name = movement_name
 
@@ -123,10 +135,12 @@ class Record:
 
         self.record['x'] = self.record['x'] + self.record['_x']*dt
         self.record['fi'] = self.record['fi'] + self.record['_fi']*dt
+
         self.record['t'] = self.record['t'] + dt
 
     def move(self, force_table, dt_min=0.02):
         self.update_stacks()
+#        self.last_movement.name = (pd.DataFrame(self.last_movement.iloc[-1])).T
 
         for F, t in force_table:
             if t > dt_min:
@@ -188,31 +202,38 @@ class Record:
                     self.last_movement,
                     self.stack_of_movement]
         for source in what:
-            print(source.__name__)
-            source.to_sql(source.__name___,
+            name = source.name
+            source.to_sql(name,
                           engine,
                           if_exists=if_exists)
 
-    def load_from_database(self, where_to='all'):
+    def load_from_database(self, what='all'):
         engine = create_engine('sqlite:///parameters.db')
-        if where_to=='all':
+        if what =='all':
             what = [self.record,
                     self.last_movement,
                     self.stack_of_movement]
-        for source in where_to:
-            source = pd.read_sql_table(source.__name__,
-                                       con=engine)
+            for source in what:
+                name = source.name
+                source = pd.read_sql_table(name, con=engine)
+        for table_name, file_name in what:
+            setattr(self,
+                    file_name,
+                    pd.read_sql_table(table_name,con=engine))
+
 
 if __name__ == '__main__':
     r = Record()
     r.position_set(130)
 
-    r.move([(0, 0.2), ], dt_min=0.05)
     r.move([(0, 0.5), ], dt_min=0.05)
-    r.move([(0, 1), ], dt_min=0.05)
-
+    r.visualize(['fi'], r.last_movement, False)
+    r.move([(0, 0.5), ], dt_min=0.05)
+    r.visualize(['fi'], r.last_movement, False)
+    r.move([(0, 2), ], dt_min=0.05)
     r.visualize(['fi'], r.last_movement, False)
     r.visualize(['fi'], r.stack_of_movement, False)
+
     plt.show()
 #    r.save_to_database('all')
 else:
