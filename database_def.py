@@ -1,12 +1,12 @@
-'''from sqlalchemy import create_engine, ForeignKey
+from sqlalchemy import create_engine, ForeignKey
 from sqlalchemy import Column, Integer, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
-'''
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-#import seaborn as snb
+#import seaborn as sns
 
 
 class Record:
@@ -31,22 +31,33 @@ class Record:
         self.stack_of_movement = self.new_movement_record()
         self.last_movement = self.new_movement_record()
 
+        self.stack_of_movement.name = "stack_of_movement"
+
+    def __str__(self):
+        return ''.join((self.record.to_string(),('\n\n'),
+                        self.last_movement.to_string(),('\n\n'),
+                        self.stack_of_movement.to_string()))
+
     @staticmethod
     def new_record():
-        return pd.DataFrame(columns=['m_1', 'm_2', 'l', 
+        record = pd.DataFrame(columns=['m_1', 'm_2', 'l',
                                      '__x', '_x', 'x',
                                      '__fi', '_fi', 'fi',
                                      'g', 't'],
-                            index=[0],
-                            dtype=np.float32)
+                              index=[0],
+                              dtype=np.float32)
+        record.name = "record"
+        return record
 
     @staticmethod
     def new_movement_record():
-        return pd.DataFrame(columns=['__x', '_x', 'x',
-                                     '__fi', '_fi', 'fi',
-                                     't'],
-                            index=[1],
-                            dtype=np.float32)
+        movement_record =  pd.DataFrame(columns=['__x', '_x', 'x',
+                                                 '__fi', '_fi', 'fi',
+                                                 't'],
+                                        index=[1],
+                                        dtype=np.float32)
+        movement_record.name = "movement_record"
+        return movement_record
 
     def give_movement_param(self):
         column_names = self.new_movement_record().columns
@@ -64,30 +75,32 @@ class Record:
         for key in self.record.columns:
             self.record[key] = np.random.random()
 
-    def position_set(self, angle):
+    def position_set(self, angle_in_degrees):
         input_table = [20, 2, 1, 
                        0, 0, 0,
-                       0, 0, angle*np.pi/180.0,
+                       0, 0, angle_in_degrees*np.pi/180.0,
                        9.81, 0]
         for pos, key in enumerate(self.record.columns):
             self.record[key] = input_table[pos]
 
     def update_stacks(self):
+        stack_name = self.stack_of_movement.name
         self.stack_of_movement = self.stack_of_movement.append(self.last_movement, 
                                                                ignore_index=True)
+        self.stack_of_movement.name = stack_name
         self.update_last_movement()
 
     def update_last_movement(self):
+        movement_name = self.last_movement.name
         self.last_movement = self.last_movement.append(self.give_movement_param(), ignore_index=True)
+        self.last_movement.name = movement_name
 
     def single_move(self, force_table_record):
         self.update_last_movement()
-        new_record = self.record.copy()
         force, dt = force_table_record
 
         """ movement equations"""
-
-        new_record['__x'] = (- np.multiply.reduce([self.record['m_2'],
+        self.record['__x'] = (- np.multiply.reduce([self.record['m_2'],
                                                    self.record['l'],
                                                    np.power(self.record['_fi'], 2),
                                                    np.sin(self.record['fi'])])
@@ -99,21 +112,18 @@ class Record:
                              ) / np.add(self.record['m_1'],
                                         self.record['m_2'])
 
-        new_record['__fi'] = (+ np.multiply.reduce([self.record['g'],
+        self.record['__fi'] = (+ np.multiply.reduce([self.record['g'],
                                                    np.sin(self.record['fi'])])
-                             + np.multiply.reduce([new_record['__x'],
+                             + np.multiply.reduce([self.record['__x'],
                                                    np.cos(self.record['fi'])])
                              ) / self.record['l']
 
-        new_record['_x'] = self.record['_x'] + new_record['__x']*dt
-        new_record['_fi'] = self.record['_fi'] + new_record['__fi']*dt
+        self.record['_x'] = self.record['_x'] + self.record['__x']*dt
+        self.record['_fi'] = self.record['_fi'] + self.record['__fi']*dt
 
-        new_record['x'] = self.record['x'] + new_record['_x']*dt
-        new_record['fi'] = self.record['fi'] + new_record['_fi']*dt
-        new_record['t'] = self.record['t'] + dt
-
-        self.record = new_record
-        return new_record
+        self.record['x'] = self.record['x'] + self.record['_x']*dt
+        self.record['fi'] = self.record['fi'] + self.record['_fi']*dt
+        self.record['t'] = self.record['t'] + dt
 
     def move(self, force_table, dt_min=0.02):
         self.update_stacks()
@@ -171,35 +181,41 @@ class Record:
         else:
             plt.show()
 
-        def save_to_database(self, what='all', if_exists='replace'):
-            engine = create_engine('sqlite:///parameters.db')
-            if what=="all":
-                what = [self.record,
-                        self.last_movement,
-                        self.stack_of_movement]
-            for source in what:
-                source.to_sql(source.__name___,
-                              engine,
-                              if_exists=if_exists)
+    def save_to_database(self, what='all', if_exists='replace'):
+        engine = create_engine('sqlite:///parameters.db')
+        if what == "all":
+            what = [self.record,
+                    self.last_movement,
+                    self.stack_of_movement]
+        for source in what:
+            print(source.__name__)
+            source.to_sql(source.__name___,
+                          engine,
+                          if_exists=if_exists)
 
-        def load_from_database(self, where_to='all'):
-            engine = create_engine('sqlite:///parameters.db')
-            if what=='all':
-                what = [self.record,
-                        self.last_movement,
-                        self.stack_of_movement]
-            for source in where_to:
-                source = pd.read_sql_table(source.__name__,
-                                           con=engine)
+    def load_from_database(self, where_to='all'):
+        engine = create_engine('sqlite:///parameters.db')
+        if where_to=='all':
+            what = [self.record,
+                    self.last_movement,
+                    self.stack_of_movement]
+        for source in where_to:
+            source = pd.read_sql_table(source.__name__,
+                                       con=engine)
 
 if __name__ == '__main__':
     r = Record()
     r.position_set(130)
-    r.move([(0,150), ], dt_min=0.05)
+
+    r.move([(0, 0.2), ], dt_min=0.05)
+    r.move([(0, 0.5), ], dt_min=0.05)
+    r.move([(0, 1), ], dt_min=0.05)
+
     r.visualize(['fi'], r.last_movement, False)
+    r.visualize(['fi'], r.stack_of_movement, False)
     plt.show()
+#    r.save_to_database('all')
 else:
-    print('It is not database.py file')
     r = Record()
     r.position_set(130)
     r.move([(10, 5), ], dt_min=0.05)
@@ -207,6 +223,7 @@ else:
 
 """
 Next to do:
-check saving to and loading from database
+stack_of_movement is broken
+database still unchecked
 
 """
