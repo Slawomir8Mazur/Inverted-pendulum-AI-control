@@ -51,12 +51,12 @@ class Record:
 
     @staticmethod
     def new_movement_record():
-        movement_record =  pd.DataFrame(columns=['__x', '_x', 'x',
-                                                 '__fi', '_fi', 'fi',
-                                                 't'],
-                                        index=[1],
-                                        dtype=np.float32)
-        movement_record.name = "movement_record"
+        movement_record = pd.DataFrame(columns=['__x', '_x', 'x',
+                                                '__fi', '_fi', 'fi',
+                                                't'],
+                                       index=[1],
+                                       dtype=np.float32)
+        movement_record.name = "last_movement"
         return movement_record
 
     def give_movement_param(self):
@@ -95,6 +95,7 @@ class Record:
         stack_name = self.stack_of_movement.name
         self.stack_of_movement = self.stack_of_movement.append(self.last_movement,
                                                                ignore_index=True)
+        self.stack_of_movement.drop_duplicates(inplace=True, keep='first')
         self.stack_of_movement.name = stack_name
         self.sort_time(self.stack_of_movement)
 
@@ -104,7 +105,9 @@ class Record:
     def update_last_movement(self):
         movement_name = self.last_movement.name
         self.last_movement.dropna(inplace=True)
-        self.last_movement = self.last_movement.append(self.give_movement_param(), ignore_index=True)
+        self.last_movement = self.last_movement.append(self.give_movement_param(),
+                                                       ignore_index=True)
+        self.last_movement.drop_duplicates(inplace=True, keep='first')
         self.last_movement.name = movement_name
 
     def single_move(self, force_table_record):
@@ -195,9 +198,9 @@ class Record:
         else:
             plt.show()
 
-    def save_to_database(self, what='all', if_exists='replace'):
-        engine = create_engine('sqlite:///parameters.db')
-        if what == "all":
+    def save_to_database(self, what=['all'], database_name='parameters', if_exists='append'):
+        engine = create_engine('sqlite:///%s.db' % database_name)
+        if what == ["all"]:
             what = [self.record,
                     self.last_movement,
                     self.stack_of_movement]
@@ -207,33 +210,29 @@ class Record:
                           engine,
                           if_exists=if_exists)
 
-    def load_from_database(self, what='all'):
-        engine = create_engine('sqlite:///parameters.db')
-        if what =='all':
-            what = [self.record,
-                    self.last_movement,
-                    self.stack_of_movement]
-            for source in what:
-                name = source.name
-                source = pd.read_sql_table(name, con=engine)
-        for table_name, file_name in what:
+    def load_from_database(self, what=['all'], database_name='parameters'):
+        engine = create_engine('sqlite:///%s.db' % database_name)
+        if what == ['all']:
+            what = ['record',
+                    'last_movement',
+                    'stack_of_movement']
+        for name in what:
             setattr(self,
-                    file_name,
-                    pd.read_sql_table(table_name,con=engine))
+                    name,
+                    pd.read_sql_table(name, con=engine))
 
 
 if __name__ == '__main__':
     r = Record()
-    r.position_set(130)
+#    r.position_set(130)
 
-    r.move([(0, 0.5), ], dt_min=0.05)
-    r.visualize(['fi'], r.last_movement, False)
-    r.move([(0, 0.5), ], dt_min=0.05)
-    r.visualize(['fi'], r.last_movement, False)
-    r.move([(0, 2), ], dt_min=0.05)
+#    r.move([(0, 0.25), ], dt_min=0.05)
+#    r.move([(0, 0.25), ], dt_min=0.05)
+    r.load_from_database(what=['all'])
     r.visualize(['fi'], r.last_movement, False)
     r.visualize(['fi'], r.stack_of_movement, False)
-
+    print(r)
+#    r.save_to_database(if_exists='replace')
     plt.show()
 #    r.save_to_database('all')
 else:
@@ -242,9 +241,3 @@ else:
     r.move([(10, 5), ], dt_min=0.05)
        
 
-"""
-Next to do:
-stack_of_movement is broken
-database still unchecked
-
-"""
