@@ -21,7 +21,7 @@ class Record:
     def __init__(self, *args, **kwargs):
         if args:
             if isinstance(args[0], Record):
-                self.record = args[0]
+                self.record = args[0].record.copy()
         else:
             self.record = self.new_record()
 
