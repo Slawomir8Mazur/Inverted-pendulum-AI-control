@@ -1,12 +1,7 @@
-from sqlalchemy import create_engine, ForeignKey
-from sqlalchemy import Column, Integer, Float
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref
-
+from sqlalchemy import create_engine
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-#import seaborn as sns
 
 
 class Record:
@@ -22,6 +17,7 @@ class Record:
         if args:
             if isinstance(args[0], Record):
                 self.record = args[0].record.copy()
+                self.record.name = self.new_record().name
         else:
             self.record = self.new_record()
 
@@ -154,7 +150,7 @@ class Record:
             else:
                 self.single_move((F, t))
 
-    def visualize(self, features, source, separately, stop=False):
+    def visualize(self, features, source, separately=False, stop=False):
         """
         Function plotting pointed features of source DataFrame
         :param features: list of features, ex. ['A_1', 'E_2']
@@ -198,7 +194,7 @@ class Record:
         else:
             plt.show()
 
-    def save_to_database(self, what=['all'], database_name='parameters', if_exists='append'):
+    def save_to_database(self, what=['all'], database_name='parameters', if_exists='replace'):
         engine = create_engine('sqlite:///%s.db' % database_name)
         if what == ["all"]:
             what = [self.record,
@@ -224,16 +220,17 @@ class Record:
 
 if __name__ == '__main__':
     r = Record()
-#    r.position_set(130)
+    r.position_set(130)
 
-#    r.move([(0, 0.25), ], dt_min=0.05)
-#    r.move([(0, 0.25), ], dt_min=0.05)
-    r.load_from_database(what=['all'])
-    r.visualize(['fi'], r.last_movement, False)
-    r.visualize(['fi'], r.stack_of_movement, False)
-    print(r)
+    r.move([(0, 0.25), ], dt_min=0.05)
+    r.move([(0, 0.25), ], dt_min=0.05)
 #    r.save_to_database(if_exists='replace')
+    r.visualize(source=r.last_movement, features=['move'])
     plt.show()
+    path = 'C:\coding\Inverted-pendulum-AI-control'
+    path2 = 'C:\\coding\\Inverted-pendulum-AI-control\\'
+    path3 = path2 + "file_db"
+    r.save_to_database(database_name='folder_db/file_2_db')
 #    r.save_to_database('all')
 else:
     r = Record()
