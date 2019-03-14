@@ -119,7 +119,7 @@ class Record:
                                                    self.record['l'],
                                                    self.record['__fi'],
                                                    np.cos(self.record['fi'])])
-                             + force
+                             - force
                              ) / np.add(self.record['m_1'],
                                         self.record['m_2'])
 
@@ -220,17 +220,11 @@ class Record:
 
 if __name__ == '__main__':
     r = Record()
-    r.position_set(130)
+    r.position_set(60)
 
-    r.move([(0, 0.25), ], dt_min=0.05)
-    r.move([(0, 0.25), ], dt_min=0.05)
-#    r.save_to_database(if_exists='replace')
-    r.visualize(source=r.last_movement, features=['move'])
-    plt.show()
-    path = 'C:\coding\Inverted-pendulum-AI-control'
-    path2 = 'C:\\coding\\Inverted-pendulum-AI-control\\'
-    path3 = path2 + "file_db"
-    r.save_to_database(database_name='folder_db/file_2_db')
+#    r.move([(1000, 0.15403), (0, 3)], dt_min=0.05)
+    r.move([(1000, 0.1531), (0, 3)], dt_min=0.01)
+    r.visualize(source=r.last_movement, features=['fi'], stop=True)
 #    r.save_to_database('all')
 else:
     r = Record()
