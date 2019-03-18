@@ -2,10 +2,8 @@ from database_def import Record
 
 import os
 import tensorflow as tf
+from tensorflow import keras
 import numpy as np
-'''
-import  matplotlib.pyplot as plt
-'''
 db_folder_name = 'main_databases'
 os.chdir(os.getcwd() + '//' + db_folder_name)
 names = os.listdir()
@@ -59,6 +57,25 @@ def munge_records(names_table, order=1, target_features=['__x', '_x', 'x', '__fi
     return input_table, target_table
 
 
-input, output = munge_records(names[:3], drop_some=(0, 996), order=3)
-print(input, end='\n\n')
-print(output.shape, end='\n\n')
+train_input, train_output = munge_records(names[100::9],
+                                          drop_some=(10, 500), order=1)
+test_input, test_output = munge_records(names[101::99],
+                                          drop_some=(10, 700), order=1)
+
+output_size = 6
+model = keras.Sequential([
+    keras.layers.Dense(output_size+2),
+    keras.layers.Dense(512, activation=tf.nn.relu),
+    keras.layers.Dense(256, activation=tf.nn.relu),
+    keras.layers.Dense(output_size)
+])
+
+model.compile(optimizer='adam',
+              loss='mse',
+              metrics=['accuracy'])
+
+model.fit(train_input, train_output, epochs=15)
+test_loss = model.evaluate(test_input, test_output)
+#print('test accuracy', test_acc, end='\n\n')
+print('test loss', test_loss, end='\n')
+model.save_weights('512r_256r.h5')
