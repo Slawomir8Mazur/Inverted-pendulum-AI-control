@@ -57,10 +57,10 @@ def munge_records(names_table, order=1, target_features=['__x', '_x', 'x', '__fi
     return input_table, target_table
 
 
-train_input, train_output = munge_records(names[100::9],
-                                          drop_some=(10, 500), order=1)
-test_input, test_output = munge_records(names[101::99],
-                                          drop_some=(10, 700), order=1)
+train_input, train_output = munge_records(names[::3],
+                                          drop_some=(1, 700), order=5)
+test_input, test_output = munge_records(names[1::33],
+                                          drop_some=(1, 950), order=5)
 
 output_size = 6
 model = keras.Sequential([
