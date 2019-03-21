@@ -57,9 +57,9 @@ def munge_records(names_table, order=1, target_features=['__x', '_x', 'x', '__fi
     return input_table, target_table
 
 
-train_input, train_output = munge_records(names[::3],
+train_input, train_output = munge_records(names[::3000],
                                           drop_some=(1, 700), order=5)
-test_input, test_output = munge_records(names[1::33],
+test_input, test_output = munge_records(names[1::3300],
                                           drop_some=(1, 950), order=5)
 
 output_size = 6
@@ -78,4 +78,5 @@ model.fit(train_input, train_output, epochs=15)
 test_loss = model.evaluate(test_input, test_output)
 #print('test accuracy', test_acc, end='\n\n')
 print('test loss', test_loss, end='\n')
-model.save_weights('512r_256r.h5')
+model.save_weights('C:\\coding\\Inverted-pendulum-AI-control\\NN_weights\\512r_256r_5.h5')
+
