@@ -1,0 +1,10 @@
+Pomysły jak rozwiązać sterowanie:
+
+1. -Tworzymy 10 sieci neuronowych o takiej samej strukturze ale innych wagach
+-każda z sieci wykonuje 5 losowych ruchów
+-sprawdzamy które 2 sieci są najbliżej pozycji zerowej
+- na podstawie tych 2 sieci tworzymy nowe 10 sieci i dajemy im inne zadanie czyli:
+-dostają nowe położenie startowe (każda takie samo) i tez wykonują 5 ruchów
+-powtarzamy poprzednie 1000 razy
+
+2. -reinforced learning

@@ -227,8 +227,6 @@ if __name__ == '__main__':
     r.visualize(source=r.last_movement, features=['fi'], stop=True)
 #    r.save_to_database('all')
 else:
-    r = Record()
-    r.position_set(130)
-    r.move([(10, 5), ], dt_min=0.05)
+    pass
        
 

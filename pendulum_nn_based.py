@@ -18,7 +18,7 @@ def munge_records(names_table, order=1, target_features=['__x', '_x', 'x', '__fi
     :param target_features: ['__x', 'x', 'fi']
     :param drop_some: False, (50, 100) drops 50 from the beggining and 100 from the end of EACH frame
     :return: for default features returns two np.arrays,
-    input_table with shape <L, 8> and
+    input_table with shape <L, 8> (as target table but with force and time of working) and
     target table with shape <L, 6>
     """
     input_table = []
