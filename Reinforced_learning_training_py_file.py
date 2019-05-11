@@ -1,4 +1,4 @@
-from database_def import Record
+from pendulum_with_PID import Record
 import numpy as np
 import pandas as pd
 from keras import Sequential
@@ -11,14 +11,15 @@ class DynamicLearning:
         self.model = Sequential()
         self.model.add(InputLayer(batch_input_shape=(1, 6)))
         self.model.add(Dense(12, activation='relu'))
-        self.model.add(Dense(3, activation='linear'))
+        self.model.add(Dense(12, activation='relu'))
+        self.model.add(Dense(2, activation='linear'))
         self.model.compile(loss='mse',
                            optimizer='adam',
                            metrics=['mae'])
         self.param = {
             'y': 0.1,
-            'eps': 0.5,
-            'decay': 0.995
+            'eps': 0.9,
+            'decay': 0.9995
         }
 
         for key in kwargs:
@@ -29,27 +30,26 @@ class DynamicLearning:
     def teach_greedy(self, num_episodes=100, range_of_angle=(1, 360), epochs=1, pass_to_reward={}):
         feats = ['__x', '_x', 'x', '__fi', '_fi', 'fi']
         for i in range(num_episodes):
-            j = 0
             record = Record()
             record.position_set(np.random.randint(*range_of_angle))
-            self.param["eps"] *= self.param["decay"]
             print("Episode {} of {}".format(i, num_episodes))
-            for j in range(15):
+            for j in range(5):
                 target = []
-                for a in range(0, 3):
+                for a in range(0, 2):
                     next_record = Record(record)
                     next_record.move(force_table=[(self.ft_table.loc[a, 'forces'],
                                                    self.ft_table.loc[a, 'times'])])
-                    #target.append(self.give_reward(next_record.record[feats], **pass_to_reward)['fi'][0])        # Constant move of trolley
                     target.append(self.give_reward(next_record.record[feats], **pass_to_reward)[['fi', 'x']].sum(axis=1)[0])
 
-
-                self.model.fit(record.record[feats], np.array(target).reshape(-1, 3), epochs=epochs, verbose=0)
+                self.model.fit(record.record[feats], np.array(target).reshape(-1, 2), epochs=epochs, verbose=0)
                 a = np.argmax(self.model.predict(record.record[feats]))
                 record.move(force_table=[(self.ft_table.loc[a, 'forces'],
                                           self.ft_table.loc[a, 'times'])])
-                print("From:\t %0.2f \tTo:\t %0.2f" % (self.give_reward(record.record[feats], **pass_to_reward)[['fi', 'x']].sum(axis=1)[0],
-                                                       self.give_reward(record.last_movement.iloc[[0], :][feats], **pass_to_reward)[['fi', 'x']].sum(axis=1)[0]))
+                print("Epochs: %d\tFrom:\t %0.2f \tTo:\t %0.2f" % (epochs,
+                                                                   self.give_reward(record.record[feats], **pass_to_reward)[['fi', 'x']].sum(axis=1)[0],
+                                                                   self.give_reward(record.last_movement.iloc[[0], :][feats], **pass_to_reward)[['fi', 'x']].sum(axis=1)[0]))
+                print("Rewards: fi\t%0.2f\tx\t%0.2f" % (self.give_reward(record.record[feats], **pass_to_reward)[['fi']].sum(axis=1)[0],
+                                                        self.give_reward(record.record[feats], **pass_to_reward)[['x']].sum(axis=1)[0]))
 
 
     def teach(self, num_episodes=100, range_of_angle=(1, 360), epochs=1, pass_to_reward={}):
@@ -61,10 +61,11 @@ class DynamicLearning:
             self.param["eps"] *= self.param["decay"]
             print("Episode {} of {}".format(i, num_episodes))
             #r_sum = 0
-            while self.give_reward(record.record[feats], **pass_to_reward)['fi'][0] < 14.9:
+            #while self.give_reward(record.record[feats], **pass_to_reward)['fi'][0] < 5:
+            for j in range(10):
                 rec_old = record.record[feats].copy()
                 if np.random.random() < self.param['eps']:
-                    a = np.random.randint(0, 3)
+                    a = np.random.randint(0, 2)
                 else:
                     a = np.argmax(self.model.predict(rec_old))
 
@@ -74,7 +75,7 @@ class DynamicLearning:
                           + self.param['y'] * np.max(self.model.predict(record.record[feats])))
                 target_vec = self.model.predict(rec_old)[0]
                 target_vec[a] = target
-                self.model.fit(rec_old, target_vec.reshape(-1, 3), epochs=epochs, verbose=0)
+                self.model.fit(rec_old, target_vec.reshape(-1, 2), epochs=epochs, verbose=0)
                 #r_sum += self.give_reward(record.record[feats], **pass_to_reward)
             #r_avg_list.append(r_sum / 1000)
         #return r_avg_list
@@ -96,8 +97,8 @@ class DynamicLearning:
 
     def ft_define(self, **kwargs):
         ft_param = {
-            "forces": [500, 0, -500],
-            "times": [0.1]
+            "forces": [500, -500],
+            "times": [0.2]
         }
         for key in kwargs:
             self.param[key] = kwargs[key]
@@ -134,7 +135,7 @@ class DynamicLearning:
             '__fi_mul': 1,
             '_fi_max': 30,
             '__fi_max': 100,
-            'x_mul': -0.2
+            'x_mul': -100
         }
         for key in kwargs:
             param[key] = kwargs[key]
@@ -152,17 +153,18 @@ class DynamicLearning:
 
 """
 d = DynamicLearning(eps=0.1)
-d.model.load_weights('reinforced_learning_greedy_lin_epoch20_4.h5')
-d.check(num_episodes=500)
-plt.show()
-"""
+d.model.load_weights('reinforced_learning_greedy_soft_2_lay_2_1.h5')
+d.check(num_episodes=80)
+plt.show()"""
+
 
 d = DynamicLearning(eps=0.1)
-d.model.load_weights('reinforced_learning_greedy_lin_epoch20_with_epoch_param_1.h5')
+#d.model.load_weights('reinforced_learning_greedy_soft_2_lay_1.h5')
 d.check(num_episodes=80)
-for epoch in [5, 4, 3, 2, 1]:
-    d.teach_greedy(num_episodes=50, epochs=epoch)
-d.model.save_weights('reinforced_learning_greedy_lin_epoch20_with_epoch_param_2.h5')
+for epoch in [8,3,1]:
+    d.teach_greedy(num_episodes=80, epochs=epoch, pass_to_reward={"x_mul": -90}, range_of_angle=(-30, 30))
+#d.teach(num_episodes=2000, epochs=3, pass_to_reward={"x_mul": -20}, range_of_angle=(-50, 50))
+d.model.save_weights('reinforced_learning_greedy_soft_2_lay_3_1.h5')
 d.check(num_episodes=80)
 plt.show()
 
