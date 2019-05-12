@@ -72,7 +72,7 @@ class Record:
             self.record[key] = np.random.random()
 
     def position_set(self, angle_in_degrees):
-        input_table = [20, 2, 1,
+        input_table = [5, 2, 1,
                        0, 0, 0,
                        0, 0, angle_in_degrees * np.pi / 180.0,
                        9.81, 0]
@@ -119,15 +119,19 @@ class Record:
                                                     self.record['l'],
                                                     self.record['__fi'],
                                                     np.cos(self.record['fi'])])
-                              - force
+                              + force
                               ) / np.add(self.record['m_1'],
                                          self.record['m_2'])
+
+        self.record['__x'] = -self.record['__x']
 
         self.record['__fi'] = (+ np.multiply.reduce([self.record['g'],
                                                      np.sin(self.record['fi'])])
                                + np.multiply.reduce([self.record['__x'],
                                                      np.cos(self.record['fi'])])
                                ) / self.record['l']
+
+        #self.record['__fi'] = -self.record['__fi']
 
         self.record['_x'] = self.record['_x'] + self.record['__x'] * dt
         self.record['_fi'] = self.record['_fi'] + self.record['__fi'] * dt
@@ -255,11 +259,11 @@ class Record:
 
 if __name__ == '__main__':
     r = Record()
-    r.position_set(60)
+    r.position_set(20)
 
 #    r.move([(1000, 0.15403), (0, 3)], dt_min=0.05)
-    r.move([(1000, 0.1531), (0, 3)], dt_min=0.01)
-    r.visualize(source=r.last_movement, features=['fi'], stop=True)
+    r.move([(500, 0.1)], dt_min=0.01)
+    r.visualize(source=r.last_movement, features=['move'], stop=True)
 #    r.save_to_database('all')
 else:
     pass
